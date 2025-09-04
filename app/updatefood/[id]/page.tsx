@@ -1,13 +1,11 @@
 'use client';
 
-// 1. Import 'use' from React
 import { useState, useRef, FC, FormEvent, ChangeEvent, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-// ... (Your interface and mock database remain the same)
+// --- Type and Mock Database (เหมือนเดิม) ---
 type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
-
 interface FoodEntry {
   id: number;
   date: string;
@@ -15,7 +13,6 @@ interface FoodEntry {
   imageUrl: string;
   meal: MealType;
 }
-
 const mockFoodDatabase: FoodEntry[] = [
     { id: 1, date: '2025-09-04', name: "Chicken Salad", imageUrl: "https://cdn.pixabay.com/photo/2025/04/24/22/36/beach-9556784_1280.jpg", meal: "Lunch" },
     { id: 2, date: '2025-09-03', name: "Spaghetti Carbonara", imageUrl: "https://cdn.pixabay.com/photo/2025/04/24/22/36/beach-9556784_1280.jpg", meal: "Dinner" },
@@ -24,32 +21,15 @@ const mockFoodDatabase: FoodEntry[] = [
     { id: 5, date: '2025-08-31', name: "Fruit Smoothie", imageUrl: "https://cdn.pixabay.com/photo/2025/04/24/22/36/beach-9556784_1280.jpg", meal: "Snack" },
 ];
 
-// 2. Update the prop type to be a Promise
-const EditFoodPage: FC<{ params: Promise<{ id: string }> }> = ({ params }) => {
-  // 3. Use the `use` hook to unwrap the Promise
-  const resolvedParams = use(params);
-  const foodId = parseInt(resolvedParams.id, 10);
-
-  const currentFoodData = mockFoodDatabase.find(food => food.id === foodId);
-
-  if (!currentFoodData) {
-    return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Food not found</h1>
-          <Link href="/dashboard" className="text-blue-600 hover:underline">
-            Go back to Dashboard
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
-  // The rest of your component logic remains the same
-  const [foodName, setFoodName] = useState(currentFoodData.name);
-  const [mealType, setMealType] = useState<MealType>(currentFoodData.meal);
-  const [date, setDate] = useState(currentFoodData.date);
-  const [imagePreview, setImagePreview] = useState<string>(currentFoodData.imageUrl);
+// -------------------------------------------------------------------------------- //
+// NEW: สร้าง Component ใหม่สำหรับจัดการฟอร์มโดยเฉพาะ
+// -------------------------------------------------------------------------------- //
+const EditFoodForm: FC<{ initialData: FoodEntry }> = ({ initialData }) => {
+  // MOVED: ย้าย Hooks ทั้งหมดมาไว้ในนี้
+  const [foodName, setFoodName] = useState(initialData.name);
+  const [mealType, setMealType] = useState<MealType>(initialData.meal);
+  const [date, setDate] = useState(initialData.date);
+  const [imagePreview, setImagePreview] = useState<string>(initialData.imageUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -62,19 +42,90 @@ const EditFoodPage: FC<{ params: Promise<{ id: string }> }> = ({ params }) => {
   };
 
   const handleCancel = () => {
-    setFoodName(currentFoodData.name);
-    setMealType(currentFoodData.meal);
-    setDate(currentFoodData.date);
-    setImagePreview(currentFoodData.imageUrl);
+    setFoodName(initialData.name);
+    setMealType(initialData.meal);
+    setDate(initialData.date);
+    setImagePreview(initialData.imageUrl);
     if (fileInputRef.current) { fileInputRef.current.value = ''; }
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const updatedFoodData = { id: currentFoodData.id, foodName, mealType, date, image: imagePreview };
+    const updatedFoodData = { id: initialData.id, foodName, mealType, date, image: imagePreview };
     console.log('Updating food data:', updatedFoodData);
     alert('Food updated successfully!');
   };
+
+  // MOVED: ย้าย JSX ของฟอร์มทั้งหมดมาไว้ในนี้
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Food Picture</label>
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-48 h-32">
+            <Image 
+              src={imagePreview} 
+              alt="Food preview" 
+              layout="fill" 
+              objectFit="cover" 
+              className="rounded-md" 
+            />
+          </div>
+          <label htmlFor="file-upload" className="cursor-pointer px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700">
+            Change Picture
+            <input id="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageChange} ref={fileInputRef} />
+          </label>
+        </div>
+      </div>
+      <div>
+        <label htmlFor="foodName" className="block text-sm font-medium text-gray-700">Food Name</label>
+        <input
+          id="foodName" type="text" value={foodName}
+          onChange={(e) => setFoodName(e.target.value)} required
+          className="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-100 border border-gray-300 rounded-md outline-none"
+        />
+      </div>
+      <div>
+        <label htmlFor="mealType" className="block text-sm font-medium text-gray-700">Meal Type</label>
+        <select
+          id="mealType" value={mealType}
+          onChange={(e) => setMealType(e.target.value as MealType)}
+          className="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-100 border border-gray-300 rounded-md outline-none"
+        >
+          <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option>
+        </select>
+      </div>
+      <div>
+        <label htmlFor="date" className="block text-sm font-medium text-gray-700">Date</label>
+        <input
+          id="date" type="date" value={date}
+          onChange={(e) => setDate(e.target.value)} required
+          className="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-100 border border-gray-300 rounded-md outline-none"
+        />
+      </div>
+      <div className="flex items-center justify-end gap-4 pt-4">
+        <Link href="/dashboard" passHref>
+          <button type="button" className="px-6 py-2 text-sm font-medium text-gray-700 bg-transparent border border-gray-300 rounded-md hover:bg-gray-100">
+            Back to Dashboard
+          </button>
+        </Link>
+        <button type="button" onClick={handleCancel} className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
+          Cancel
+        </button>
+        <button type="submit" className="px-6 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-md">
+          Save Changes
+        </button>
+      </div>
+    </form>
+  );
+};
+// -------------------------------------------------------------------------------- //
+
+// Page Component หลัก (โค้ดสั้นลงมาก)
+const EditFoodPage: FC<{ params: Promise<{ id: string }> }> = ({ params }) => {
+  const resolvedParams = use(params);
+  const foodId = parseInt(resolvedParams.id, 10);
+  const currentFoodData = mockFoodDatabase.find(food => food.id === foodId);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-teal-200 via-lime-200 to-yellow-300 p-4 sm:p-6 lg:p-8">
@@ -89,88 +140,20 @@ const EditFoodPage: FC<{ params: Promise<{ id: string }> }> = ({ params }) => {
         </div>
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-800">Edit Food Entry</h1>
-          <p className="text-gray-500">You are editing: <span className="font-semibold">{currentFoodData.name}</span></p>
+          {currentFoodData && <p className="text-gray-500">You are editing: <span className="font-semibold">{currentFoodData.name}</span></p>}
         </div>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* ... Your form JSX remains the same ... */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Food Picture</label>
-            <div className="flex flex-col items-center gap-4">
-              <div className="relative w-48 h-32">
-                <Image 
-                  src={imagePreview} 
-                  alt="Food preview" 
-                  layout="fill" 
-                  objectFit="cover" 
-                  className="rounded-md" 
-                />
-              </div>
-              <label htmlFor="file-upload" className="cursor-pointer px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700">
-                Change Picture
-                <input id="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageChange} ref={fileInputRef} />
-              </label>
-            </div>
-          </div>
-          <div>
-            <label htmlFor="foodName" className="block text-sm font-medium text-gray-700">Food Name</label>
-            <input
-              id="foodName"
-              type="text"
-              value={foodName}
-              onChange={(e) => setFoodName(e.target.value)}
-              required
-              className="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-100 border border-gray-300 rounded-md outline-none"
-            />
-          </div>
-          <div>
-            <label htmlFor="mealType" className="block text-sm font-medium text-gray-700">Meal Type</label>
-            <select
-              id="mealType"
-              value={mealType}
-              onChange={(e) => setMealType(e.target.value as MealType)}
-              className="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-100 border border-gray-300 rounded-md outline-none"
-            >
-              <option>Breakfast</option>
-              <option>Lunch</option>
-              <option>Dinner</option>
-              <option>Snack</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="date" className="block text-sm font-medium text-gray-700">Date</label>
-            <input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-              className="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-100 border border-gray-300 rounded-md outline-none"
-            />
-          </div>
-          <div className="flex items-center justify-end gap-4 pt-4">
-            <Link href="/dashboard" passHref>
-              <button
-                type="button"
-                className="px-6 py-2 text-sm font-medium text-gray-700 bg-transparent border border-gray-300 rounded-md hover:bg-gray-100"
-              >
-                Back to Dashboard
-              </button>
+        
+        {/* NEW: เรียกใช้ Component ใหม่ และจัดการกรณีหาข้อมูลไม่เจอ */}
+        {currentFoodData ? (
+          <EditFoodForm initialData={currentFoodData} />
+        ) : (
+          <div className="text-center py-8">
+            <h2 className="text-xl font-bold">Food not found</h2>
+            <Link href="/dashboard" className="text-blue-600 hover:underline mt-2 inline-block">
+              Go back to Dashboard
             </Link>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-md"
-            >
-              Save Changes
-            </button>
           </div>
-        </form>
+        )}
       </div>
     </main>
   );
