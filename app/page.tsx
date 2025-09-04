@@ -5,7 +5,7 @@ import food from './images/foodbanner.jpg';
 
 const HomePage: React.FC = () => {
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-center bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 p-8 text-white">
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 p-8 text-white">
       <div className="flex flex-col items-center justify-center text-center">
         
         {/* Main Heading */}
@@ -46,10 +46,10 @@ const HomePage: React.FC = () => {
         </div>
         <div className="mt-12 text-sm text-gray-200 drop-shadow-sm">
           <h1>Created by TANAWAT</h1>
-          
+
         </div>
       </div>
-    </main>
+    </div>
   );
 };
 
