@@ -1,7 +1,8 @@
 import React from 'react'
 
-export const page = () => {
+export const UpdateFoodpage = () => {
   return (
     <div>Update Food Page</div>
   )
 }
+    
