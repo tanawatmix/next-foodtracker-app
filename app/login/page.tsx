@@ -1,38 +1,38 @@
-'use client'; // <-- ต้องมีบรรทัดนี้เพื่อใช้ Hooks เช่น useState, FormEvent
+'use client'; // <-- This directive is necessary for using Hooks like useState and handling form events.
 
 import { useState, FC, FormEvent } from 'react';
 import Link from 'next/link';
 
 /**
  * LoginPage Component
- * * หน้าสำหรับให้ผู้ใช้เข้าสู่ระบบ
- * - มีฟอร์มสำหรับกรอก Email และ Password
- * - มีระบบแจ้งเตือน (Alert) สำหรับแสดงข้อความต่างๆ เช่น ล็อกอินสำเร็จ หรือรหัสผ่านผิด
- * - มีลิงก์สำหรับกลับไปหน้าแรก และไปยังหน้าลงทะเบียน
+ * * A page for user authentication.
+ * - Features a form for Email and Password submission.
+ * - Includes an alert system to display messages (e.g., successful login, incorrect password).
+ * - Provides navigation links to the home and registration pages.
  */
 const LoginPage: FC = () => {
-  // State สำหรับจัดการข้อความแจ้งเตือน
+  // State for managing alert messages.
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
-  // State สำหรับจัดการประเภทของการแจ้งเตือน (success, error)
+  // State for managing the type of alert (success or error).
   const [alertType, setAlertType] = useState<'success' | 'error' | null>(null);
 
   /**
-   * จัดการการ submit ฟอร์มล็อกอิน
+   * Handles the login form submission.
    * @param e - FormEvent
    */
   const handleLogin = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // ป้องกันการรีเฟรชหน้าเว็บเมื่อกด submit
+    e.preventDefault(); // Prevents the page from reloading on form submission.
     
-    // --- ส่วนนี้คือ Logic สำหรับการล็อกอินจริง ---
-    // ตัวอย่าง: ตรวจสอบข้อมูลแล้วแสดง Alert
-    // ในโปรเจกต์จริง คุณจะต้องเชื่อมต่อกับ API ของคุณที่นี่
+    // --- This is where your actual login logic would go ---
+    // Example: Validate credentials and display an alert.
+    // In a real application, you would make an API call here.
     const email = e.currentTarget.email.value;
     const password = e.currentTarget.password.value;
 
     if (email === "admin@test.com" && password === "1234") {
       setAlertType('success');
       setAlertMessage('Login successful! Redirecting...');
-      // TODO: ใส่ Logic การ Redirect ไปหน้า Dashboard ที่นี่
+      // TODO: Implement redirection to the dashboard here.
     } else {
       setAlertType('error');
       setAlertMessage('Invalid email or password. Please try again.');
@@ -116,7 +116,7 @@ const LoginPage: FC = () => {
 
         {/* Link to Register */}
         <p className="text-center text-sm text-gray-600">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
             Register here
           </Link>
