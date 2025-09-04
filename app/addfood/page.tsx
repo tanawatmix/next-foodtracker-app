@@ -1,7 +1,7 @@
-import React from 'react'
+    import React from 'react'
 
-export const Addpage = () => {
-  return (
-    <div>Add Food Page</div>
-  )
-}
+    export default function Addpage() {
+    return (
+        <div>Add Food Page</div>
+    )
+    }

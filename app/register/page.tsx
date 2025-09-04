@@ -1,7 +1,7 @@
-import React from 'react'
+    import React from 'react'
 
-export const Registerpage = () => {
-  return (
-    <div>Register Page</div>
-  )
-}
+    export default function Registerpage() {
+    return (
+        <div>register Page</div>
+    )
+    }

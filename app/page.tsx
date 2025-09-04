@@ -33,15 +33,17 @@ const HomePage: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-6">
-          <Link href="/register">
-            <button className="transform rounded-full bg-white px-8 py-3 font-semibold text-blue-600 shadow-lg transition duration-300 ease-in-out hover:-translate-y-1 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300">
-              Register
-            </button>
+          <Link
+            href="/register"
+            className="transform rounded-full bg-white px-8 py-3 font-semibold text-blue-600 shadow-lg transition duration-300 ease-in-out hover:-translate-y-1 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center"
+          >
+            Register
           </Link>
-          <Link href="/login">
-            <button className="transform rounded-full bg-black bg-opacity-20 px-10 py-3 font-semibold text-white shadow-lg backdrop-blur-md transition duration-300 ease-in-out hover:-translate-y-1 hover:bg-opacity-30 focus:outline-none focus:ring-4 focus:ring-purple-300">
-              Login
-            </button>
+          <Link
+            href="/login"
+            className="transform rounded-full bg-black bg-opacity-20 px-10 py-3 font-semibold text-white shadow-lg backdrop-blur-md transition duration-300 ease-in-out hover:-translate-y-1 hover:bg-opacity-30 focus:outline-none focus:ring-4 focus:ring-purple-300 flex items-center justify-center"
+          >
+            Login
           </Link>
         </div>
         <div className="mt-12 text-sm text-gray-200 drop-shadow-sm">

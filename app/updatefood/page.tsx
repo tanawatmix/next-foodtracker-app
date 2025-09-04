@@ -1,8 +1,7 @@
-import React from 'react'
+    import React from 'react'
 
-export const UpdateFoodpage = () => {
-  return (
-    <div>Update Food Page</div>
-  )
-}
-    
+    export default function Updatepage() {
+    return (
+        <div>Update Food Page</div>
+    )
+    }
