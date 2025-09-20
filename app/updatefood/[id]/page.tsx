@@ -3,12 +3,15 @@
 import { useState, useRef, FC, FormEvent, ChangeEvent, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import userAvatar from '../../../images/user.png'; // MODIFIED: Added user avatar with correct path
+
+// REMOVED: No longer need to import the image
+// import userAvatar from '../../../images/user.png'; 
 
 // --- User and Food Mock Data ---
+// MODIFIED: Use a string path to the image in the public folder
 const loggedInUser = {
   name: 'Tanawat Mix',
-  profileImageUrl: userAvatar,
+  profileImageUrl: '/images/user.png', // This is the correct way
 };
 
 type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
@@ -134,7 +137,6 @@ const EditFoodPage: FC<{ params: Promise<{ id: string }> }> = ({ params }) => {
   return (
     <main className="min-h-screen bg-gradient-to-br from-teal-200 via-lime-200 to-yellow-300 p-4 sm:p-6 lg:p-8">
       <div className="max-w-2xl mx-auto bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 space-y-6">
-        {/* MODIFIED: Added header section with user info */}
         <div className="flex items-center justify-between">
             <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-teal-700 hover:underline transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -174,4 +176,3 @@ const EditFoodPage: FC<{ params: Promise<{ id: string }> }> = ({ params }) => {
 };
 
 export default EditFoodPage;
-
