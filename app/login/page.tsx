@@ -1,19 +1,54 @@
 "use client";
 
+import { useState, FC, FormEvent } from 'react';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { FC } from 'react';
+import { supabase } from '../../lib/SupabaseClient'; // 1. Import Supabase client
 
 const LoginPage: FC = () => {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault(); 
-    router.push('/dashboard'); 
+  // 2. Create the login handler function
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    const email = e.currentTarget.email.value;
+    const password = e.currentTarget.password.value;
+
+    try {
+      // 2.1 Query the 'user_tb' table for a matching user
+      const { data, error: selectError } = await supabase
+        .from('user_tb')
+        .select('id, fullname, user_image_url')
+        .eq('email', email)
+        .eq('password', password) // In a real app, use Supabase Auth for security
+        .single(); // .single() expects exactly one result or throws an error
+
+      if (selectError) {
+        // This will catch "No rows found" or other query errors
+        throw new Error('Invalid email or password.');
+      }
+
+      // 2.2 If successful, store user data in localStorage
+      localStorage.setItem('food_tracker_user', JSON.stringify(data));
+
+      // 2.3 Redirect to the dashboard
+      router.push('/dashboard');
+
+    } catch (error: any) {
+      console.error('Login Error:', error);
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-cyan-300 via-blue-400 to-purple-500 p-4">
+    <main className="flex items-center justify-center min-h-screen bg-gradient-to-br from-cyan-300 via-blue-400 to-purple-500 p-4">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-xl">
         <div className="mb-4">
           <Link
@@ -43,6 +78,13 @@ const LoginPage: FC = () => {
           <p className="text-gray-500">Log in to continue tracking.</p>
         </div>
 
+        {/* 3. Add a section to display login errors */}
+        {error && (
+            <div className="p-4 bg-red-100 text-red-800 rounded-md text-sm font-medium" role="alert">
+                {error}
+            </div>
+        )}
+
         <form className="space-y-6" onSubmit={handleLogin}>
           {/* Input: Email */}
           <div>
@@ -56,7 +98,7 @@ const LoginPage: FC = () => {
               id="email"
               name="email"
               type="email"
-              // REMOVED: ลบ required ออก
+              required
               className="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-100 border border-gray-300 rounded-md outline-none"
               placeholder="you@example.com"
             />
@@ -74,7 +116,7 @@ const LoginPage: FC = () => {
               id="password"
               name="password"
               type="password"
-              // REMOVED: ลบ required ออก
+              required
               className="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-100 border border-gray-300 rounded-md outline-none"
               placeholder="••••••••"
             />
@@ -84,9 +126,10 @@ const LoginPage: FC = () => {
           <div>
             <button
               type="submit"
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={isLoading}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              Login
+              {isLoading ? 'Logging in...' : 'Login'}
             </button>
           </div>
         </form>
@@ -103,7 +146,7 @@ const LoginPage: FC = () => {
           </Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 };
 
