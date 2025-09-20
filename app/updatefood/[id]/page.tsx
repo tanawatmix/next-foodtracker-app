@@ -1,48 +1,45 @@
 'use client';
 
-import { useState, useRef, FC, FormEvent, ChangeEvent, use } from 'react';
+// 1. Import 'use' เพิ่มเข้ามา
+import { useState, useRef, FC, FormEvent, ChangeEvent, useEffect, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+// MODIFIED: แก้ไขชื่อไฟล์ SupabaseClient เป็น supabaseClient (ตัวพิมพ์เล็ก)
+import { supabase } from '../../../lib/SupabaseClient';
 
-// REMOVED: No longer need to import the image
-// import userAvatar from '../../../images/user.png'; 
-
-// --- User and Food Mock Data ---
-// MODIFIED: Use a string path to the image in the public folder
-const loggedInUser = {
-  name: 'Tanawat Mix',
-  profileImageUrl: '/images/user.png', // This is the correct way
-};
-
-type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
-interface FoodEntry {
-  id: number;
-  date: string;
-  name: string;
-  imageUrl: string;
-  meal: MealType;
+// --- Type Definitions ---
+// MODIFIED: แก้ไข Type ของ id ให้เป็น string เพื่อให้ตรงกับ uuid
+interface User {
+  id: string;
+  fullname: string;
+  user_image_url: string;
 }
-const mockFoodDatabase: FoodEntry[] = [
-    { id: 1, date: '2025-09-04', name: "Chicken Salad", imageUrl: "https://cdn.pixabay.com/photo/2017/03/17/16/20/eat-2152670_1280.jpg", meal: "Lunch" },
-    { id: 2, date: '2025-09-03', name: "Spaghetti Carbonara", imageUrl: "https://cdn.pixabay.com/photo/2023/05/29/18/41/carbonara-8027222_1280.jpg", meal: "Dinner" },
-    { id: 3, date: '2025-09-02', name: "Avocado Toast", imageUrl: "https://cdn.pixabay.com/photo/2017/03/30/15/48/avocado-2189053_1280.jpg", meal: "Breakfast" },
-    { id: 4, date: '2025-09-01', name: "Salmon Steak", imageUrl: "https://cdn.pixabay.com/photo/2014/11/05/15/57/salmon-518032_1280.jpg", meal: "Dinner" },
-    { id: 5, date: '2025-08-31', name: "Fruit Smoothie", imageUrl: "https://cdn.pixabay.com/photo/2018/02/23/11/06/smoothie-3175402_1280.jpg", meal: "Snack" },
-];
+interface FoodEntry {
+  id: string;
+  fooddate_at: string;
+  foodname: string;
+  food_image_url: string;
+  meal: string;
+  user_id?: string;
+}
+type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
 
-// -------------------------------------------------------------------------------- //
-// Form Component
-// -------------------------------------------------------------------------------- //
-const EditFoodForm: FC<{ initialData: FoodEntry }> = ({ initialData }) => {
-  const [foodName, setFoodName] = useState(initialData.name);
-  const [mealType, setMealType] = useState<MealType>(initialData.meal);
-  const [date, setDate] = useState(initialData.date);
-  const [imagePreview, setImagePreview] = useState<string>(initialData.imageUrl);
+// --- Form Component (เหมือนเดิม) ---
+const EditFoodForm: FC<{ initialData: FoodEntry; user: User }> = ({ initialData, user }) => {
+  const router = useRouter();
+  const [foodName, setFoodName] = useState(initialData.foodname);
+  const [mealType, setMealType] = useState<MealType>(initialData.meal as MealType);
+  const [date, setDate] = useState(initialData.fooddate_at);
+  const [imagePreview, setImagePreview] = useState<string>(initialData.food_image_url);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => { setImagePreview(reader.result as string); };
       reader.readAsDataURL(file);
@@ -50,33 +47,58 @@ const EditFoodForm: FC<{ initialData: FoodEntry }> = ({ initialData }) => {
   };
 
   const handleCancel = () => {
-    setFoodName(initialData.name);
-    setMealType(initialData.meal);
-    setDate(initialData.date);
-    setImagePreview(initialData.imageUrl);
+    setFoodName(initialData.foodname);
+    setMealType(initialData.meal as MealType);
+    setDate(initialData.fooddate_at);
+    setImagePreview(initialData.food_image_url);
+    setImageFile(null);
     if (fileInputRef.current) { fileInputRef.current.value = ''; }
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const updatedFoodData = { id: initialData.id, foodName, mealType, date, image: imagePreview };
-    console.log('Updating food data:', updatedFoodData);
-    alert('Food updated successfully!');
+    setIsLoading(true);
+    let newImageUrl = initialData.food_image_url;
+
+    try {
+      if (imageFile) {
+        const filePath = `public/${user.id}/${Date.now()}_${imageFile.name}`;
+        const { error: uploadError } = await supabase.storage.from('food_bk').upload(filePath, imageFile);
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from('food_bk').getPublicUrl(filePath);
+        newImageUrl = urlData.publicUrl;
+      }
+      const { error: updateError } = await supabase
+        .from('food_tb')
+        .update({
+          foodname: foodName,
+          meal: mealType,
+          fooddate_at: date,
+          food_image_url: newImageUrl,
+        })
+        .eq('id', initialData.id);
+      if (updateError) throw updateError;
+      alert('Food updated successfully!');
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error updating food:', error);
+      let message = 'An unexpected error occurred.';
+      if (error instanceof Error) message = error.message;
+      alert(`Error: ${message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
+  
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* ... JSX ของฟอร์มเหมือนเดิม ... */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Food Picture</label>
         <div className="flex flex-col items-center gap-4">
           <div className="relative w-48 h-32">
-            <Image 
-              src={imagePreview} 
-              alt="Food preview" 
-              layout="fill" 
-              objectFit="cover" 
-              className="rounded-md" 
-            />
+            <Image src={imagePreview} alt="Food preview" layout="fill" objectFit="cover" className="rounded-md" />
           </div>
           <label htmlFor="file-upload" className="cursor-pointer px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700">
             Change Picture
@@ -86,89 +108,120 @@ const EditFoodForm: FC<{ initialData: FoodEntry }> = ({ initialData }) => {
       </div>
       <div>
         <label htmlFor="foodName" className="block text-sm font-medium text-gray-700">Food Name</label>
-        <input
-          id="foodName" type="text" value={foodName}
-          onChange={(e) => setFoodName(e.target.value)} required
-          className="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-100 border border-gray-300 rounded-md outline-none"
-        />
+        <input id="foodName" type="text" value={foodName} onChange={(e) => setFoodName(e.target.value)} required className="w-full px-4 py-2 mt-1 bg-gray-100 rounded-md"/>
       </div>
       <div>
         <label htmlFor="mealType" className="block text-sm font-medium text-gray-700">Meal Type</label>
-        <select
-          id="mealType" value={mealType}
-          onChange={(e) => setMealType(e.target.value as MealType)}
-          className="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-100 border border-gray-300 rounded-md outline-none"
-        >
+        <select id="mealType" value={mealType} onChange={(e) => setMealType(e.target.value as MealType)} className="w-full px-4 py-2 mt-1 bg-gray-100 rounded-md">
           <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option>
         </select>
       </div>
       <div>
         <label htmlFor="date" className="block text-sm font-medium text-gray-700">Date</label>
-        <input
-          id="date" type="date" value={date}
-          onChange={(e) => setDate(e.target.value)} required
-          className="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-100 border border-gray-300 rounded-md outline-none"
-        />
+        <input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required className="w-full px-4 py-2 mt-1 bg-gray-100 rounded-md"/>
       </div>
       <div className="flex items-center justify-end gap-4 pt-4">
         <Link href="/dashboard" passHref>
-          <button type="button" className="px-6 py-2 text-sm font-medium text-gray-700 bg-transparent border border-gray-300 rounded-md hover:bg-gray-100">
-            Back to Dashboard
-          </button>
+          <button type="button" className="px-6 py-2 text-sm bg-transparent border border-gray-300 rounded-md hover:bg-gray-100">Back to Dashboard</button>
         </Link>
-        <button type="button" onClick={handleCancel} className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
-          Cancel
-        </button>
-        <button type="submit" className="px-6 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-md">
-          Save Changes
+        <button type="button" onClick={handleCancel} className="px-6 py-2 text-sm bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+        <button type="submit" disabled={isLoading} className="px-6 py-2 text-sm text-white bg-teal-600 rounded-md hover:bg-teal-700 shadow-md disabled:bg-gray-400">
+          {isLoading ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
     </form>
   );
 };
-// -------------------------------------------------------------------------------- //
 
-// Main Page Component
+// --- Main Page Component (ส่วนที่แก้ไข) ---
 const EditFoodPage: FC<{ params: Promise<{ id: string }> }> = ({ params }) => {
   const resolvedParams = use(params);
-  const foodId = parseInt(resolvedParams.id, 10);
-  const currentFoodData = mockFoodDatabase.find(food => food.id === foodId);
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [foodData, setFoodData] = useState<FoodEntry | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      const userDataString = localStorage.getItem('food_tracker_user');
+      if (!userDataString) {
+        router.push('/login');
+        return;
+      }
+      const loggedInUser: User = JSON.parse(userDataString);
+      setUser(loggedInUser);
+
+      try {
+        // MODIFIED: ลบ parseInt ออก!
+        const foodId = resolvedParams.id;
+        
+        const { data, error: fetchError } = await supabase
+          .from('food_tb')
+          .select('*')
+          .eq('id', foodId)
+          .single();
+
+        if (fetchError) throw fetchError;
+        
+        if (data.user_id !== loggedInUser.id) {
+            throw new Error("You are not authorized to edit this item.");
+        }
+
+        setFoodData(data);
+      } catch (err) {
+        console.error("Error fetching food data:", err);
+        if (err instanceof Error) setError(err.message);
+        else setError("Could not load food data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchInitialData();
+  }, [resolvedParams.id, router]);
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading editor...</div>;
+  }
+
+  if (error) {
+     return (
+        <main className="min-h-screen flex items-center justify-center">
+            <div className="text-center p-8 bg-white rounded-lg shadow-md">
+                <h2 className="text-xl font-bold text-red-600">Error</h2>
+                <p className="text-gray-600 mt-2">{error}</p>
+                <Link href="/dashboard" className="text-blue-600 hover:underline mt-4 inline-block">
+                    Go back to Dashboard
+                </Link>
+            </div>
+        </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-teal-200 via-lime-200 to-yellow-300 p-4 sm:p-6 lg:p-8">
       <div className="max-w-2xl mx-auto bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 space-y-6">
         <div className="flex items-center justify-between">
-            <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-teal-700 hover:underline transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back to Home
+          <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-teal-700 hover:underline">
+            Back to Dashboard
+          </Link>
+          {user && (
+            <Link href="/profile" className="flex items-center gap-2 hover:bg-gray-100 p-2 rounded-full">
+              <Image src={user.user_image_url} alt="User Profile" width={40} height={40} className="rounded-full object-cover"/>
+              <span className="hidden sm:inline font-semibold text-gray-700">{user.fullname}</span>
             </Link>
-            <Link href="/profile" className="flex items-center gap-2 hover:bg-gray-100 p-2 rounded-full transition-colors">
-                <Image
-                    src={loggedInUser.profileImageUrl}
-                    alt="User Profile"
-                    width={40}
-                    height={40}
-                    className="rounded-full object-cover"
-                />
-                <span className="hidden sm:inline font-semibold text-gray-700">{loggedInUser.name}</span>
-            </Link>
+          )}
         </div>
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-800">Edit Food Entry</h1>
-          {currentFoodData && <p className="text-gray-500">You are editing: <span className="font-semibold">{currentFoodData.name}</span></p>}
+          {foodData && <p className="text-gray-500">You are editing: <span className="font-semibold">{foodData.foodname}</span></p>}
         </div>
         
-        {currentFoodData ? (
-          <EditFoodForm initialData={currentFoodData} />
+        {foodData && user ? (
+          <EditFoodForm initialData={foodData} user={user} />
         ) : (
-          <div className="text-center py-8">
-            <h2 className="text-xl font-bold">Food not found</h2>
-            <Link href="/dashboard" className="text-blue-600 hover:underline mt-2 inline-block">
-              Go back to Dashboard
-            </Link>
-          </div>
+          !isLoading && <p>Could not load form.</p>
         )}
       </div>
     </main>
