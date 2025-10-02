@@ -5,11 +5,8 @@ import { useState, useRef, FC, FormEvent, ChangeEvent, useEffect, use } from 're
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-// MODIFIED: แก้ไขชื่อไฟล์ SupabaseClient เป็น supabaseClient (ตัวพิมพ์เล็ก)
 import { supabase } from '../../../lib/SupabaseClient';
 
-// --- Type Definitions ---
-// MODIFIED: แก้ไข Type ของ id ให้เป็น string เพื่อให้ตรงกับ uuid
 interface User {
   id: string;
   fullname: string;
@@ -25,7 +22,6 @@ interface FoodEntry {
 }
 type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
 
-// --- Form Component (เหมือนเดิม) ---
 const EditFoodForm: FC<{ initialData: FoodEntry; user: User }> = ({ initialData, user }) => {
   const router = useRouter();
   const [foodName, setFoodName] = useState(initialData.foodname);
@@ -93,7 +89,6 @@ const EditFoodForm: FC<{ initialData: FoodEntry; user: User }> = ({ initialData,
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* ... JSX ของฟอร์มเหมือนเดิม ... */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Food Picture</label>
         <div className="flex flex-col items-center gap-4">
@@ -133,7 +128,6 @@ const EditFoodForm: FC<{ initialData: FoodEntry; user: User }> = ({ initialData,
   );
 };
 
-// --- Main Page Component (ส่วนที่แก้ไข) ---
 const EditFoodPage: FC<{ params: Promise<{ id: string }> }> = ({ params }) => {
   const resolvedParams = use(params);
   const router = useRouter();
@@ -153,7 +147,6 @@ const EditFoodPage: FC<{ params: Promise<{ id: string }> }> = ({ params }) => {
       setUser(loggedInUser);
 
       try {
-        // MODIFIED: ลบ parseInt ออก!
         const foodId = resolvedParams.id;
         
         const { data, error: fetchError } = await supabase

@@ -69,7 +69,7 @@ const RegisterPage: FC = () => {
 
       alert('Registration successful! Please log in.');
       router.push('/login');
-    } catch (error) { // MODIFIED: Removed ': any'
+    } catch (error) { 
       console.error('Registration Error:', error);
       let message = 'An error occurred during registration.';
       if (error instanceof Error) {

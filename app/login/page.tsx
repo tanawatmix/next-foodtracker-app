@@ -3,8 +3,7 @@
 import { useState, FC, FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../lib/SupabaseClient'; // แก้ไขชื่อไฟล์เป็นตัวพิมพ์เล็ก
-
+import { supabase } from '../../lib/SupabaseClient';  
 const LoginPage: FC = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
